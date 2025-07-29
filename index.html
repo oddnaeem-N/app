@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vocabulary Practice App (with Save)</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input, textarea { margin: 5px 0; width: 100%; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    td, th { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    .match { background-color: #f0f8ff; cursor: pointer; }
+    .matched { background-color: #c8f7c5; }
+    img { max-width: 100px; margin-top: 10px; }
+    .section { border: 1px solid #ddd; padding: 10px; margin-top: 20px; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+<h2>🧠 Vocabulary Practice App (with Save & Import/Export)</h2>
+
+<!-- Cloze Section -->
+<div class="section">
+  <h3>✍️ Fill in the Blank (Cloze)</h3>
+  <textarea id="cloze" rows="2" placeholder="e.g., He _____ all his money."></textarea>
+  <input type="text" id="clozeAnswer" placeholder="Answer (e.g., squander)">
+  <button onclick="saveCloze()">Save Cloze</button>
+  <button onclick="checkCloze()">Check</button>
+  <p id="clozeResult"></p>
+</div>
+
+<!-- Matching Section -->
+<div class="section">
+  <h3>🔗 Matching Table</h3>
+  <textarea id="matchLeft" rows="5" placeholder="Enter words (one per line)"></textarea>
+  <textarea id="matchRight" rows="5" placeholder="Enter meanings (same order)"></textarea>
+  <button onclick="saveMatching()">Save Matching</button>
+  <button onclick="generateTable()">Create Matching Table</button>
+  <table id="matchingTable"></table>
+</div>
+
+<!-- Export/Import Section -->
+<div class="section">
+  <h3>💾 Backup & Restore</h3>
+  <button onclick="exportData()">⬇️ Export Backup</button>
+  <input type="file" accept=".json" onchange="importData(event)">
+</div>
+
+<script>
+  // Local storage keys
+  const CLOZE_KEY = "my_vocab_cloze";
+  const MATCH_KEY = "my_vocab_matching";
+
+  // Save Cloze
+  function saveCloze() {
+    const text = document.getElementById("cloze").value;
+    const answer = document.getElementById("clozeAnswer").value;
+    localStorage.setItem(CLOZE_KEY, JSON.stringify({ text, answer }));
+    alert("Cloze saved!");
+  }
+
+  // Check Cloze
+  function checkCloze() {
+    const cloze = JSON.parse(localStorage.getItem(CLOZE_KEY) || "{}");
+    if (!cloze.text || !cloze.text.includes("_____")) {
+      document.getElementById("clozeResult").textContent = "No valid saved cloze found.";
+      return;
+    }
+    document.getElementById("clozeResult").innerHTML = cloze.text.replace("_____", `<b style="color:blue">${cloze.answer}</b>`);
+  }
+
+  // Save Matching
+  function saveMatching() {
+    const left = document.getElementById("matchLeft").value.trim().split('\n');
+    const right = document.getElementById("matchRight").value.trim().split('\n');
+    if (left.length !== right.length) {
+      alert("Left and right must have equal entries.");
+      return;
+    }
+    localStorage.setItem(MATCH_KEY, JSON.stringify({ left, right }));
+    alert("Matching saved!");
+  }
+
+  // Generate Matching Table
+  function generateTable() {
+    const data = JSON.parse(localStorage.getItem(MATCH_KEY) || "{}");
+    const left = data.left || [];
+    const right = data.right || [];
+
+    const table = document.getElementById("matchingTable");
+    table.innerHTML = "";
+    const row = table.insertRow();
+    row.innerHTML = "<th>Word</th><th>Meaning</th>";
+
+    const shuffled = [...right].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < left.length; i++) {
+      const tr = table.insertRow();
+      const td1 = tr.insertCell();
+      td1.textContent = left[i];
+
+      const td2 = tr.insertCell();
+      td2.textContent = shuffled[i];
+      td2.className = "match";
+      td2.onclick = function () {
+        if (right[left.indexOf(td1.textContent)] === td2.textContent) {
+          td2.classList.add("matched");
+        } else {
+          td2.style.backgroundColor = "#f8d7da";
+        }
+      };
+    }
+  }
+
+  // Export Backup
+  function exportData() {
+    const cloze = localStorage.getItem(CLOZE_KEY);
+    const match = localStorage.getItem(MATCH_KEY);
+    const backup = {
+      cloze: JSON.parse(cloze || "{}"),
+      match: JSON.parse(match || "{}")
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "vocab_backup.json";
+    a.click();
+  }
+
+  // Import Backup
+  function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const data = JSON.parse(e.target.result);
+      if (data.cloze) localStorage.setItem(CLOZE_KEY, JSON.stringify(data.cloze));
+      if (data.match) localStorage.setItem(MATCH_KEY, JSON.stringify(data.match));
+      alert("Backup imported! You can now use your saved content.");
+    };
+    reader.readAsText(file);
+  }
+
+  // Optional: Auto-fill saved data on load
+  window.onload = () => {
+    const cloze = JSON.parse(localStorage.getItem(CLOZE_KEY) || "{}");
+    if (cloze.text) document.getElementById("cloze").value = cloze.text;
+    if (cloze.answer) document.getElementById("clozeAnswer").value = cloze.answer;
+
+    const match = JSON.parse(localStorage.getItem(MATCH_KEY) || "{}");
+    if (match.left) document.getElementById("matchLeft").value = match.left.join('\n');
+    if (match.right) document.getElementById("matchRight").value = match.right.join('\n');
+  }
+</script>
+
+</body>
+</html>
