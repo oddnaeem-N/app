@@ -1,274 +1,357 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vocabulary Practice App</title>
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      margin: 0;
-      padding: 1rem;
-      background: #f9f9f9;
-      color: #333;
-    }
-    h2, h3 {
-      color: #2c3e50;
-    }
-    .section {
-      background: #fff;
-      padding: 1rem;
-      border-radius: 12px;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    }
-    textarea, input[type="text"], button, input[type="file"] {
-      width: 100%;
-      padding: 0.75rem;
-      margin-top: 0.5rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-    }
-    button {
-      background: #3498db;
-      color: white;
-      font-weight: bold;
-      border: none;
-      transition: background 0.3s ease;
-    }
-    button:hover {
-      background: #2980b9;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 0.75rem;
-      text-align: center;
-    }
-    th {
-      background-color: #ecf0f1;
-    }
-    .match {
-      background-color: #e8f8f5;
-      cursor: pointer;
-    }
-    .matched {
-      background-color: #d4efdf;
-    }
-    img {
-      max-width: 100%;
-      height: auto;
-      margin-top: 10px;
-      border-radius: 10px;
-    }
-    .image-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-    }
-    .image-item {
-      flex: 0 0 48%;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      overflow: hidden;
-      cursor: pointer;
-    }
-    .image-item img {
-      width: 100%;
-      height: auto;
-    }
-    .image-matched {
-      border-color: #2ecc71;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Daily Recall Quiz with Spaced Repetition</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 650px;
+    margin: 30px auto;
+    padding: 0 15px;
+    background: #f9f9f9;
+    color: #222;
+  }
+  h1 {
+    text-align: center;
+    color: #004d40;
+  }
+  .question-box {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 0 10px #ccc;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .question-text {
+    font-size: 1.2em;
+    margin-bottom: 15px;
+  }
+  .options {
+    list-style: none;
+    padding: 0;
+  }
+  .options li {
+    background: #e0f2f1;
+    margin-bottom: 10px;
+    padding: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .options li:hover:not(.disabled) {
+    background: #b2dfdb;
+  }
+  .options li.correct {
+    background: #a5d6a7;
+    cursor: default;
+  }
+  .options li.wrong {
+    background: #ef9a9a;
+    cursor: default;
+  }
+  .options li.disabled {
+    pointer-events: none;
+  }
+  button {
+    background: #00796b;
+    border: none;
+    color: white;
+    padding: 12px 25px;
+    font-size: 1em;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+  button:disabled {
+    background: #ccc;
+    cursor: default;
+  }
+  .score-box {
+    background: #c8e6c9;
+    padding: 20px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 1.3em;
+    color: #2e7d32;
+  }
+  .review {
+    margin-top: 15px;
+    font-size: 0.95em;
+    color: #555;
+    background: #fff3e0;
+    padding: 10px;
+    border-left: 5px solid #ffa726;
+  }
+  .review-tag {
+    display: inline-block;
+    background: #ffcc80;
+    color: #5d4037;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    margin-left: 10px;
+  }
+</style>
 </head>
-<body>  <h2>🧠 Vocabulary Practice App</h2>  <div class="section">
-    <h3>✍️ Fill in the Blank (Cloze)</h3>
-    <textarea id="cloze" rows="2" placeholder="e.g., He _____ all his money."></textarea>
-    <input type="text" id="clozeAnswer" placeholder="Answer (e.g., squander)" />
-    <button onclick="saveCloze()">Save Cloze</button>
-    <button onclick="checkCloze()">Check</button>
-    <p id="clozeResult"></p>
-  </div>  <div class="section">
-    <h3>🔗 Matching Table</h3>
-    <textarea id="matchLeft" rows="5" placeholder="Enter words (one per line)"></textarea>
-    <textarea id="matchRight" rows="5" placeholder="Enter meanings (same order)"></textarea>
-    <button onclick="saveMatching()">Save Matching</button>
-    <button onclick="generateTable()">Create Matching Table</button>
-    <table id="matchingTable"></table>
-  </div>  <div class="section">
-    <h3>🖼️ Image Matching</h3>
-    <input type="file" id="imageUpload" accept="image/*" multiple />
-    <textarea id="imageWords" rows="3" placeholder="Enter corresponding words (same order)"></textarea>
-    <button onclick="generateImageMatch()">Create Image Matching</button>
-    <div class="image-grid" id="imageGrid"></div>
-    <div class="image-grid" id="wordGrid"></div>
-  </div>  <div class="section">
-    <h3>💾 Backup & Restore</h3>
-    <button onclick="exportData()">⬇️ Export Backup</button>
-    <input type="file" accept=".json" onchange="importData(event)" />
-  </div>  <script>
-    const CLOZE_KEY = "my_vocab_cloze";
-    const MATCH_KEY = "my_vocab_matching";
+<body>
 
-    function saveCloze() {
-      const text = document.getElementById("cloze").value;
-      const answer = document.getElementById("clozeAnswer").value;
-      localStorage.setItem(CLOZE_KEY, JSON.stringify({ text, answer }));
-      alert("Cloze saved!");
+<h1>Daily Recall Quiz Demo</h1>
+
+<div id="quiz-container" class="question-box"></div>
+
+<button id="next-btn" disabled>Next Question</button>
+
+<div id="score-container" style="display:none;" class="score-box"></div>
+
+<script>
+  // Sample question bank
+  const questions = [
+    {
+      id: 1,
+      chapter: "Cell",
+      question: "What is the basic unit of life?",
+      options: ["Atom", "Cell", "Molecule", "Organ"],
+      answer: "Cell",
+      explanation: "The cell is the smallest unit of life that can perform all life processes."
+    },
+    {
+      id: 2,
+      chapter: "Blood",
+      question: "Which blood cells help in clotting?",
+      options: ["Red Blood Cells", "White Blood Cells", "Platelets", "Plasma"],
+      answer: "Platelets",
+      explanation: "Platelets help stop bleeding by forming clots."
+    },
+    {
+      id: 3,
+      chapter: "Respiration",
+      question: "Where does gas exchange occur in the lungs?",
+      options: ["Bronchi", "Alveoli", "Trachea", "Diaphragm"],
+      answer: "Alveoli",
+      explanation: "Alveoli are tiny air sacs where oxygen and carbon dioxide are exchanged."
+    },
+    {
+      id: 4,
+      chapter: "Genetics",
+      question: "DNA stands for?",
+      options: ["Deoxyribonucleic Acid", "Dinucleic Acid", "Dioxynucleic Acid", "None"],
+      answer: "Deoxyribonucleic Acid",
+      explanation: "DNA is the molecule that carries genetic instructions."
+    },
+    {
+      id: 5,
+      chapter: "Heart",
+      question: "Which chamber of the heart pumps oxygenated blood to the body?",
+      options: ["Right Atrium", "Left Atrium", "Right Ventricle", "Left Ventricle"],
+      answer: "Left Ventricle",
+      explanation: "The left ventricle pumps oxygen-rich blood to the entire body."
+    }
+  ];
+
+  // Spaced repetition intervals in days
+  const reviewIntervals = [2, 4, 7, 15, 30, 50];
+
+  // LocalStorage key
+  const STORAGE_KEY = "wrongQuestionsData";
+
+  // Load wrong questions data from localStorage
+  let wrongQuestionsData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+
+  let dailyQuestions = [];
+  let currentIndex = 0;
+  let score = 0;
+  let wrongThisSession = [];
+
+  const quizContainer = document.getElementById("quiz-container");
+  const nextBtn = document.getElementById("next-btn");
+  const scoreContainer = document.getElementById("score-container");
+
+  // Fisher-Yates shuffle
+  function shuffleArray(arr) {
+    for(let i=arr.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+  }
+
+  // Add wrong question to storage with spaced repetition schedule
+  function addWrongQuestion(questionId) {
+    const now = new Date().toISOString();
+
+    // Avoid duplicate
+    if(wrongQuestionsData.find(q => q.questionId === questionId)) return;
+
+    // Calculate review dates
+    const reviewDates = reviewIntervals.map(days => {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString();
+    });
+
+    wrongQuestionsData.push({
+      questionId,
+      firstWrongDate: now,
+      reviewDates,
+      lastReviewedDate: null,
+      reviewIndex: 0
+    });
+    saveWrongQuestions();
+  }
+
+  // Save to localStorage
+  function saveWrongQuestions() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(wrongQuestionsData));
+  }
+
+  // Get IDs of questions due for review today or earlier
+  function getDueReviewQuestions() {
+    const today = new Date();
+
+    return wrongQuestionsData
+      .filter(q => {
+        const nextReviewDateStr = q.reviewDates[q.reviewIndex];
+        if(!nextReviewDateStr) return false;
+        return today >= new Date(nextReviewDateStr);
+      })
+      .map(q => q.questionId);
+  }
+
+  // Mark question reviewed: update reviewIndex and lastReviewedDate
+  function markQuestionReviewed(questionId) {
+    const q = wrongQuestionsData.find(q => q.questionId === questionId);
+    if(!q) return;
+    q.reviewIndex++;
+    q.lastReviewedDate = new Date().toISOString();
+
+    // Remove if all reviews done
+    if(q.reviewIndex >= reviewIntervals.length){
+      wrongQuestionsData = wrongQuestionsData.filter(item => item.questionId !== questionId);
     }
 
-    function checkCloze() {
-      const cloze = JSON.parse(localStorage.getItem(CLOZE_KEY) || "{}");
-      if (!cloze.text || !cloze.text.includes("_____")) {
-        document.getElementById("clozeResult").textContent = "No valid saved cloze found.";
-        return;
-      }
-      document.getElementById("clozeResult").innerHTML = cloze.text.replace("_____", `<b style='color:#2980b9'>${cloze.answer}</b>`);
+    saveWrongQuestions();
+  }
+
+  // Prepare today's questions:
+  // 1. Review questions due today (prioritized)
+  // 2. Then random new questions from question bank (not in review)
+  function prepareDailyQuestions() {
+    const dueReviewIds = getDueReviewQuestions();
+    let reviewQs = questions.filter(q => dueReviewIds.includes(q.id));
+    let reviewIdsSet = new Set(dueReviewIds);
+
+    // Pick new questions excluding those in review
+    let newQs = questions.filter(q => !reviewIdsSet.has(q.id));
+
+    shuffleArray(newQs);
+
+    // For demo, total 5 questions per day, mix review + new
+    let totalNeeded = 5;
+    let combined = [...reviewQs];
+
+    for(let i=0; i<newQs.length && combined.length < totalNeeded; i++) {
+      combined.push(newQs[i]);
     }
 
-    function saveMatching() {
-      const left = document.getElementById("matchLeft").value.trim().split('\n');
-      const right = document.getElementById("matchRight").value.trim().split('\n');
-      if (left.length !== right.length) {
-        alert("Left and right must have equal entries.");
-        return;
-      }
-      localStorage.setItem(MATCH_KEY, JSON.stringify({ left, right }));
-      alert("Matching saved!");
+    shuffleArray(combined);
+    return combined;
+  }
+
+  function showQuestion() {
+    nextBtn.disabled = true;
+    quizContainer.innerHTML = "";
+
+    if(currentIndex >= dailyQuestions.length){
+      showScore();
+      return;
     }
 
-    function generateTable() {
-      const data = JSON.parse(localStorage.getItem(MATCH_KEY) || "{}");
-      const left = data.left || [];
-      const right = data.right || [];
-      const table = document.getElementById("matchingTable");
-      table.innerHTML = "";
+    const q = dailyQuestions[currentIndex];
 
-      const row = table.insertRow();
-      row.innerHTML = "<th>Word</th><th>Meaning</th>";
+    const questionEl = document.createElement("div");
+    questionEl.classList.add("question-text");
 
-      const shuffled = [...right].sort(() => Math.random() - 0.5);
+    // Mark if review question
+    let isReview = getDueReviewQuestions().includes(q.id);
+    questionEl.innerHTML = `Q${currentIndex + 1}. ${q.question} ` + 
+      (isReview ? '<span class="review-tag">Review</span>' : '');
 
-      for (let i = 0; i < left.length; i++) {
-        const tr = table.insertRow();
-        const td1 = tr.insertCell();
-        td1.textContent = left[i];
-        const td2 = tr.insertCell();
-        td2.textContent = shuffled[i];
-        td2.className = "match";
-        td2.onclick = function () {
-          if (right[left.indexOf(td1.textContent)] === td2.textContent) {
-            td2.classList.add("matched");
-          } else {
-            td2.style.backgroundColor = "#f8d7da";
+    quizContainer.appendChild(questionEl);
+
+    const ul = document.createElement("ul");
+    ul.classList.add("options");
+
+    q.options.forEach(option => {
+      const li = document.createElement("li");
+      li.textContent = option;
+      li.addEventListener("click", () => selectOption(li, q));
+      ul.appendChild(li);
+    });
+
+    quizContainer.appendChild(ul);
+  }
+
+  function selectOption(selectedLi, question) {
+    const allOptions = quizContainer.querySelectorAll(".options li");
+    allOptions.forEach(li => {
+      li.classList.add("disabled");
+      li.removeEventListener("click", () => selectOption);
+      if(li === selectedLi){
+        if(li.textContent === question.answer){
+          li.classList.add("correct");
+          score++;
+          // If this question was in review, mark reviewed
+          if(getDueReviewQuestions().includes(question.id)){
+            markQuestionReviewed(question.id);
           }
-        };
-      }
-    }
-
-    function generateImageMatch() {
-      const files = document.getElementById("imageUpload").files;
-      const words = document.getElementById("imageWords").value.trim().split('\n');
-      const imageGrid = document.getElementById("imageGrid");
-      const wordGrid = document.getElementById("wordGrid");
-      imageGrid.innerHTML = "";
-      wordGrid.innerHTML = "";
-
-      if (files.length !== words.length) {
-        alert("Number of images and words must match.");
-        return;
-      }
-
-      const imgList = [];
-      const wordList = [...words].sort(() => Math.random() - 0.5);
-
-      [...files].forEach((file, idx) => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const div = document.createElement("div");
-          div.className = "image-item";
-          div.dataset.word = words[idx];
-          div.onclick = () => checkImageMatch(div.dataset.word);
-          const img = document.createElement("img");
-          img.src = e.target.result;
-          div.appendChild(img);
-          imageGrid.appendChild(div);
-          imgList.push(div);
-        };
-        reader.readAsDataURL(file);
-      });
-
-      wordList.forEach(w => {
-        const div = document.createElement("div");
-        div.className = "image-item";
-        div.textContent = w;
-        div.onclick = () => checkImageMatch(w);
-        wordGrid.appendChild(div);
-      });
-
-      let selected = [];
-
-      window.checkImageMatch = (value) => {
-        selected.push(value);
-        if (selected.length === 2) {
-          const [a, b] = selected;
-          if (a === b) {
-            [...document.querySelectorAll(`[data-word='${a}']`)].forEach(el => el.classList.add("image-matched"));
-            [...document.querySelectorAll(".image-item")].forEach(el => {
-              if (el.textContent === a) el.classList.add("image-matched");
-            });
-          }
-          selected = [];
+        } else {
+          li.classList.add("wrong");
+          addWrongQuestion(question.id);
+          wrongThisSession.push(question);
         }
-      };
-    }
+      } else {
+        if(li.textContent === question.answer){
+          li.classList.add("correct");
+        }
+      }
+    });
 
-    function exportData() {
-      const cloze = localStorage.getItem(CLOZE_KEY);
-      const match = localStorage.getItem(MATCH_KEY);
-      const backup = {
-        cloze: JSON.parse(cloze || "{}"),
-        match: JSON.parse(match || "{}")
-      };
-      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = "vocab_backup.json";
-      a.click();n
-    }
+    // Show explanation for wrong or correct answer
+    const explanation = document.createElement("div");
+    explanation.classList.add("review");
+    explanation.textContent = `Explanation: ${question.explanation}`;
+    quizContainer.appendChild(explanation);
 
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const data = JSON.parse(e.target.result);
-        if (data.cloze) localStorage.setItem(CLOZE_KEY, JSON.stringify(data.cloze));
-        if (data.match) localStorage.setItem(MATCH_KEY, JSON.stringify(data.match));
-        alert("Backup imported! Reload to see your data.");
-      };
-      reader.readAsText(file);
-    }
+    nextBtn.disabled = false;
+  }
 
-    window.onload = () => {
-      const cloze = JSON.parse(localStorage.getItem(CLOZE_KEY) || "{}");
-      if (cloze.text) document.getElementById("cloze").value = cloze.text;
-      if (cloze.answer) document.getElementById("clozeAnswer").value = cloze.answer;
+  nextBtn.addEventListener("click", () => {
+    currentIndex++;
+    showQuestion();
+  });
 
-      const match = JSON.parse(localStorage.getItem(MATCH_KEY) || "{}");
-      if (match.left) document.getElementById("matchLeft").value = match.left.join('\n');
-      if (match.right) document.getElementById("matchRight").value = match.right.join('\n');
+  function showScore() {
+    quizContainer.style.display = "none";
+    nextBtn.style.display = "none";
+    scoreContainer.style.display = "block";
+    scoreContainer.innerHTML = `<strong>Your Score:</strong> ${score} / ${dailyQuestions.length}`;
+
+    if(wrongThisSession.length > 0){
+      let reviewHTML = `<p><strong>Review these topics again:</strong></p><ul>`;
+      wrongThisSession.forEach(q => {
+        reviewHTML += `<li>${q.chapter} - ${q.question}</li>`;
+      });
+      reviewHTML += `</ul>`;
+      scoreContainer.innerHTML += reviewHTML;
     }
-  </script></body>
+  }
+
+  // Initialize
+  dailyQuestions = prepareDailyQuestions();
+  showQuestion();
+
+</script>
+
+</body>
 </html>
